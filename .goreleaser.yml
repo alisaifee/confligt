@@ -1,0 +1,18 @@
+project_name: confligt
+builds:
+  - binary: confligt
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+release:
+  github:
+    owner: alisaifee
+    name: confligt
+archive:
+  format: tar.gz
+  replacements:
+    amd64: 64-bit
+    darwin: macOS
