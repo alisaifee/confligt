@@ -16,3 +16,24 @@ archive:
   replacements:
     amd64: 64-bit
     darwin: macOS
+brew:
+  github:
+    owner: alisaifee
+    name: homebrew-tap
+  commit_author:
+    name: Ali-Akber Saifee
+    email: ali@indydevs.org
+  folder: Formula
+  description: "Find conflicting branches"
+dockers:
+  -
+    binary: change-aws-password
+    image: jaxxstorm/change-aws-password
+    latest: true
+fpm:
+  vendor: Ali-Akber Saifee
+  maintainer: Ali-Akber Saifee <ali@indydevs.org>
+  description: "Find conflicting branches"
+  license: MIT
+  formats:
+    - deb
