@@ -20,13 +20,10 @@ var docCmd = &cobra.Command{
 		}
 		in, _ := ioutil.ReadFile("/tmp/confligt.md")
 		// Add installation
-		installationString := `
-
-#### Installation
-` + "`go get github.com/alisaifee/confligt`"
+		installationString, _ := ioutil.ReadFile("INSTALLATION.md")
 		readme := string(in)
 		end := strings.Index(readme, RootCmd.Short) + len(RootCmd.Short)
-		finalReadme := readme[:end] + installationString + readme[end:]
+		finalReadme := readme[:end] + "\n" + string(installationString) + readme[end:]
 		// Fix sillyness
 		re := regexp.MustCompile(`(Number of branches to check concurrently \(default) (\d+)\)`)
 		finalReadme = re.ReplaceAllString(finalReadme, `$1 NUMCPUs/2)`)
