@@ -149,14 +149,6 @@ $ confligt --remote=alice --main=develop
 		rebasedWithMaster := make([]*plumbing.Reference, 0)
 		wg := sizedwaitgroup.New(viper.GetInt("concurrency"))
 
-		// warn about retarded concurrency values
-		expectedCombinations := (len(branchesToCheck) * (len(branchesToCheck) - 1)) / 2
-		if expectedCombinations > 100 && viper.GetInt("concurrency") > runtime.NumCPU() {
-			L.Printf(
-				red("%d is more than the number of available CPUs. This process will probably run for a while and hurt you"),
-				viper.GetInt("concurrency"),
-			)
-		}
 		// skip branches that already conflict with master
 		for _, reference := range branchesToCheck {
 			wg.Add()
