@@ -24,11 +24,11 @@ brew:
     name: Ali-Akber Saifee
     email: ali@indydevs.org
   folder: Formula
-  description: "Find conflicting branches"
+  description: "Find conflicting branches in git repositories"
 fpm:
   vendor: Ali-Akber Saifee
   maintainer: Ali-Akber Saifee <ali@indydevs.org>
-  description: "Find conflicting branches"
+  description: "Find conflicting branches in git repositories"
   license: MIT
   formats:
     - deb

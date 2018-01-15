@@ -13,8 +13,9 @@ install:
 script:
 - go vet ./...
 cache:
-  directories:
-  - "./vendor"
+  - bundler:
+  - directories:
+    - "./vendor"
 notifications:
   email: false
 after_success:

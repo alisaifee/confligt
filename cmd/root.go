@@ -25,8 +25,8 @@ var cfgFile string
 
 var RootCmd = &cobra.Command{
 	Use:   "confligt",
-	Short: "Find conflicting branches",
-	Long: `Confligt finds conflicting branches in your git repository.
+	Short: "Find conflicting branches in git repositories",
+	Long: `Confligt finds conflicting branches in git repositories.
 
 Without any arguments or flags, confligt will inspect all local branches in the current working
 directory - that have commits since 7 days ago - against each other and other remote branches

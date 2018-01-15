@@ -1,27 +1,18 @@
 ## confligt
 
-Find conflicting branches
+Find conflicting branches in git repositories
 #### Installation
 
-If you have a working `golang` development environment
+If you have a working golang development environment: `go get github.com/alisaifee/confligt`
 
-- `go get github.com/alisaifee/confligt`
+If you are using a mac & use [homebrew](https://brew.sh/): `brew tap alisaifee/homebrew-tap && brew install confligt`
 
-If you are using a mac:
-
-```
-brew tap alisaifee/homebrew-tap
-brew install confligt
-```
-
-If you are on a debian based OS:
-
- - Grab a `.deb` from [here](https://github.com/alisaifee/confligt/releases/latest)
+If you are on a debian based OS, grab a `.deb` from [here](https://github.com/alisaifee/confligt/releases/latest)
 
 
 ### Synopsis
 
-Confligt finds conflicting branches in your git repository.
+Confligt finds conflicting branches in git repositories.
 
 Without any arguments or flags, confligt will inspect all local branches in the current working
 directory - that have commits since 7 days ago - against each other and other remote branches
