@@ -25,11 +25,6 @@ brew:
     email: ali@indydevs.org
   folder: Formula
   description: "Find conflicting branches"
-dockers:
-  -
-    binary: change-aws-password
-    image: jaxxstorm/change-aws-password
-    latest: true
 fpm:
   vendor: Ali-Akber Saifee
   maintainer: Ali-Akber Saifee <ali@indydevs.org>
