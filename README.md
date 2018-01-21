@@ -14,7 +14,7 @@ If you are on a debian based OS, grab a `.deb` from [here](https://github.com/al
 
 Confligt finds conflicting branches in git repositories.
 
-Without any arguments or flags, confligt will inspect all local branches in the current working
+Without any arguments or flags, confligt will inspect all local & remote branches in the current working
 directory - that have commits since 7 days ago - against each other and other remote branches
 (from the default origin) to find conflicting pairs.
 
@@ -45,7 +45,8 @@ $ confligt --remote=alice --main=develop
       --fetch             Fetch from remote before inspecting
       --filter string     Regular expression to match branch names against
   -h, --help              help for confligt
-      --local-only        Find conflicts for local branches only (default true)
+      --include-local     Include local branches when finding conflicts (default true)
+      --include-remote    Include remote branches when finding conflicts (default true)
   -m, --main string       Name of main branch (default "master")
       --mine              Inspect only your own branches
   -r, --remote string     Name of remote (default "origin")

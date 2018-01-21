@@ -28,7 +28,7 @@ var RootCmd = &cobra.Command{
 	Short: "Find conflicting branches in git repositories",
 	Long: `Confligt finds conflicting branches in git repositories.
 
-Without any arguments or flags, confligt will inspect all local branches in the current working
+Without any arguments or flags, confligt will inspect all local & remote branches in the current working
 directory - that have commits since 7 days ago - against each other and other remote branches
 (from the default origin) to find conflicting pairs.`,
 	Example: `
@@ -114,15 +114,16 @@ $ confligt --remote=alice --main=develop
 			}
 			return nil
 		})
-		var branchesToCheck map[string]*plumbing.Reference
+		branchesToCheck := make(map[string]*plumbing.Reference)
 		if mainBranch == nil {
 			L.Fatalf("Unable to find main branch with name %s", refBranchName)
 		} else {
-
-			if viper.GetBool("local-only") {
-				branchesToCheck = localBranches
-			} else {
-				branchesToCheck = localBranches
+			if viper.GetBool("include-local") {
+				for k, v := range localBranches {
+					branchesToCheck[k] = v
+				}
+			}
+			if viper.GetBool("include-remote"){
 				for k, v := range remoteBranches {
 					branchesToCheck[k] = v
 				}
@@ -244,10 +245,11 @@ func init() {
 	RootCmd.PersistentFlags().BoolP("verbose", "v", false, "Display verbose logging")
 	RootCmd.PersistentFlags().BoolP("fetch", "", false, "Fetch from remote before inspecting")
 	RootCmd.PersistentFlags().BoolP("mine", "", false, "Inspect only your own branches")
-	RootCmd.PersistentFlags().BoolP("local-only", "", true, "Find conflicts for local branches only")
 	RootCmd.PersistentFlags().IntP("concurrency", "", int(math.Max(1, float64(runtime.NumCPU()/2))), "Number of branches to check concurrently")
+	RootCmd.PersistentFlags().BoolP("include-local", "", true, "Include local branches when finding conflicts")
+	RootCmd.PersistentFlags().BoolP("include-remote", "", true, "Include remote branches when finding conflicts")
 
-	for _, flag := range []string{"remote", "main", "since", "filter", "fetch", "verbose", "mine", "local-only", "concurrency"} {
+	for _, flag := range []string{"remote", "main", "since", "filter", "fetch", "verbose", "mine", "include-local", "include-remote", "concurrency"} {
 		viper.BindPFlag(flag, RootCmd.PersistentFlags().Lookup(flag))
 	}
 
