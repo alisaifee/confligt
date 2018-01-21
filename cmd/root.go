@@ -81,6 +81,20 @@ $ confligt --remote=alice --main=develop
 			}
 		}
 
+		branchFilter := func(ref * plumbing.Reference) bool {
+			matchesFilter := true
+			if viper.GetString("filter") != "" {
+				match, _ := regexp.MatchString(viper.GetString("filter"), ref.Name().Short())
+				matchesFilter = matchesFilter && match
+			}
+			if viper.GetBool("mine"){
+				commit, _ := repository.CommitObject(ref.Hash())
+				matchesFilter = matchesFilter && commit.Author.Email == currentUserEmail
+
+			}
+			return matchesFilter
+		}
+
 		var mainBranch *plumbing.Reference
 
 		conflicts := 0
@@ -93,15 +107,6 @@ $ confligt --remote=alice --main=develop
 				mainBranch = reference
 			} else {
 				if commit, err := repository.CommitObject(reference.Hash()); err == nil && time.Now().Sub(commit.Author.When).Seconds() < secondsSince {
-					if viper.GetBool("mine") && commit.Author.Email != currentUserEmail {
-						return nil
-					}
-					if viper.GetString("filter") != "" {
-						match, _ := regexp.MatchString(viper.GetString("filter"), reference.Name().Short())
-						if !match {
-							return nil
-						}
-					}
 					if reference.Name().IsBranch() {
 						localBranches[reference.Name().String()] = reference
 					} else {
@@ -130,15 +135,17 @@ $ confligt --remote=alice --main=develop
 			}
 			// filter out branches that have already been merged to mainBranch
 			for name, branch := range branchesToCheck {
-				commit, _ := repository.MergeBase(branch, mainBranch)
-				if commit.Hash == branch.Hash() {
-					if V && !strings.Contains(mainBranch.Name().Short(), branch.Name().Short()) {
-						L.Printf(
-							"%s is already merged. Consider deleting the branch",
-							yellow(branch.Name().Short()),
-						)
+				if branchFilter(branch){
+					commit, _ := repository.MergeBase(branch, mainBranch)
+					if commit.Hash == branch.Hash() {
+						if V && !strings.Contains(mainBranch.Name().Short(), branch.Name().Short()) {
+							L.Printf(
+								"%s is already merged. Consider deleting the branch",
+								yellow(branch.Name().Short()),
+							)
+						}
+						delete(branchesToCheck, name)
 					}
-					delete(branchesToCheck, name)
 				}
 			}
 		}
@@ -159,7 +166,7 @@ $ confligt --remote=alice --main=develop
 				case _ = <-errC:
 					wg.Done()
 				case res := <-resultC:
-					if res > 0 {
+					if res > 0 && branchFilter(source){
 						fmt.Printf(
 							"%v conflicts with %s [%d conflict(s)]\n",
 							boolColor(target.Name().Short(), res == 1, color.FgYellow, color.FgRed),
@@ -171,9 +178,9 @@ $ confligt --remote=alice --main=develop
 					} else {
 						rebasedWithMaster = append(rebasedWithMaster, target)
 					}
-					wg.Done()
-
 				}
+				wg.Done()
+
 			}(mainBranch, reference)
 		}
 		wg.Wait()
@@ -184,35 +191,42 @@ $ confligt --remote=alice --main=develop
 				boolColor(masterConflicts, masterConflicts == 0),
 				mainBranch.Name().Short(),
 			)
-			L.Printf("Inspecting %d branch combinations...", (len(rebasedWithMaster)*(len(rebasedWithMaster)-1))/2)
+			outerLoop := 0
+			for _, branch := range rebasedWithMaster {
+				if branchFilter(branch) {
+					outerLoop += 1
+				}
+			}
+			L.Printf("Inspecting %d branch combinations...", (outerLoop*(len(rebasedWithMaster)-1))/2)
 		}
 
 		// find sad remote branches.
 		sadBranches := make(map[string]byte)
-
 		for i, source := range rebasedWithMaster {
-			for _, target := range rebasedWithMaster[1+i:] {
-				wg.Add()
-				go func(source *plumbing.Reference, target *plumbing.Reference) {
-					resultC, errC := checkConflict(repository, source, target)
-					select {
-					case _ = <-errC:
-						wg.Done()
-					case res := <-resultC:
-						if res > 0 {
-							L.Printf(
-								"%v conflicts with %v [%d conflict(s)]\n",
-								boolColor(source.Name().Short(), res == 1, color.FgYellow, color.FgRed),
-								boolColor(target.Name().Short(), res == 1, color.FgYellow, color.FgRed),
-								res,
-							)
-							sadBranches[source.Name().String()] = 1
-							sadBranches[target.Name().String()] = 1
-							conflicts = +1
+			if branchFilter(source) {
+				for _, target := range rebasedWithMaster[1+i:] {
+					wg.Add()
+					go func(source *plumbing.Reference, target *plumbing.Reference) {
+						resultC, errC := checkConflict(repository, source, target)
+						select {
+						case _ = <-errC:
+							wg.Done()
+						case res := <-resultC:
+							if res > 0 {
+								L.Printf(
+									"%v conflicts with %v [%d conflict(s)]\n",
+									boolColor(source.Name().Short(), res == 1, color.FgYellow, color.FgRed),
+									boolColor(target.Name().Short(), res == 1, color.FgYellow, color.FgRed),
+									res,
+								)
+								sadBranches[source.Name().String()] = 1
+								sadBranches[target.Name().String()] = 1
+								conflicts = +1
+							}
+							wg.Done()
 						}
-						wg.Done()
-					}
-				}(source, target)
+					}(source, target)
+				}
 			}
 		}
 		wg.Wait()
