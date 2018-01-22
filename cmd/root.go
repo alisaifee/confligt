@@ -184,6 +184,21 @@ $ confligt --remote=alice --main=develop
 			}(mainBranch, reference)
 		}
 		wg.Wait()
+
+		// separate branches from filter from the rest
+		referenceBranches := make([]*plumbing.Reference, 0)
+		remainingValidBranches := make([]*plumbing.Reference, 0)
+		fullList := make([]*plumbing.Reference, 0)
+		for _, branch := range rebasedWithMaster {
+			if branchFilter(branch) {
+				referenceBranches = append(referenceBranches, branch)
+			}else{
+				remainingValidBranches = append(remainingValidBranches, branch)
+
+			}
+		}
+		fullList = append(fullList, referenceBranches...)
+		fullList = append(fullList, remainingValidBranches...)
 		if V {
 			masterConflicts := len(conflictingWithMaster)
 			L.Printf(
@@ -191,42 +206,34 @@ $ confligt --remote=alice --main=develop
 				boolColor(masterConflicts, masterConflicts == 0),
 				mainBranch.Name().Short(),
 			)
-			outerLoop := 0
-			for _, branch := range rebasedWithMaster {
-				if branchFilter(branch) {
-					outerLoop += 1
-				}
-			}
-			L.Printf("Inspecting %d branch combinations...", (outerLoop*(len(rebasedWithMaster)-1))/2)
+			L.Printf("Inspecting %d branch combinations...", (len(referenceBranches)*(len(fullList)-1))/2)
 		}
 
 		// find sad remote branches.
 		sadBranches := make(map[string]byte)
-		for i, source := range rebasedWithMaster {
-			if branchFilter(source) {
-				for _, target := range rebasedWithMaster[1+i:] {
-					wg.Add()
-					go func(source *plumbing.Reference, target *plumbing.Reference) {
-						resultC, errC := checkConflict(repository, source, target)
-						select {
-						case _ = <-errC:
-							wg.Done()
-						case res := <-resultC:
-							if res > 0 {
-								L.Printf(
-									"%v conflicts with %v [%d conflict(s)]\n",
-									boolColor(source.Name().Short(), res == 1, color.FgYellow, color.FgRed),
-									boolColor(target.Name().Short(), res == 1, color.FgYellow, color.FgRed),
-									res,
-								)
-								sadBranches[source.Name().String()] = 1
-								sadBranches[target.Name().String()] = 1
-								conflicts = +1
-							}
-							wg.Done()
+		for i, source := range referenceBranches {
+			for _, target := range fullList[1+i:] {
+				wg.Add()
+				go func(source *plumbing.Reference, target *plumbing.Reference) {
+					resultC, errC := checkConflict(repository, source, target)
+					select {
+					case _ = <-errC:
+						wg.Done()
+					case res := <-resultC:
+						if res > 0 {
+							L.Printf(
+								"%v conflicts with %v [%d conflict(s)]\n",
+								boolColor(source.Name().Short(), res == 1, color.FgYellow, color.FgRed),
+								boolColor(target.Name().Short(), res == 1, color.FgYellow, color.FgRed),
+								res,
+							)
+							sadBranches[source.Name().String()] = 1
+							sadBranches[target.Name().String()] = 1
+							conflicts = +1
 						}
-					}(source, target)
-				}
+						wg.Done()
+					}
+				}(source, target)
 			}
 		}
 		wg.Wait()
